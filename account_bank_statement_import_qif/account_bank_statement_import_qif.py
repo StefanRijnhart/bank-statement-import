@@ -16,7 +16,7 @@ class AccountBankStatementImport(models.TransientModel):
         return self.env.context.get('journal_id') and True
 
     @api.model
-    def _get_journal(self, currency_id, bank_account_id, account_number):
+    def _get_journal(self, currency_id, bank_account_id):
         """ As .QIF format does not allow us to detect the journal, we need to
         let the user choose it.
         We set it in context before to call super so it's the same as
@@ -99,7 +99,9 @@ class AccountBankStatementImport(models.TransientModel):
                             'not correctly formed.'))
 
         vals_bank_statement.update({
+            'currency_code': None,
+            'account_number': None,
             'balance_end_real': total,
             'transactions': transactions
         })
-        return None, None, [vals_bank_statement]
+        return [vals_bank_statement]
