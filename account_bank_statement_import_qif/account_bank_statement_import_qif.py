@@ -28,7 +28,7 @@ class AccountBankStatementImport(models.TransientModel):
             if record.journal_id:
                 record = record.with_context(journal_id=record.journal_id.id)
         return super(AccountBankStatementImport, record)._get_journal(
-            currency_id, bank_account_id, account_number)
+            currency_id, bank_account_id)
 
     @api.model
     def _check_qif(self, data_file):
