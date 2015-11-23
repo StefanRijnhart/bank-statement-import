@@ -126,7 +126,7 @@ class AccountBankStatementImport(models.TransientModel):
                 self._import_statement(stmt_vals))
             if statement_id:
                 statement_ids.append(statement_id)
-            notifications.append(new_notifications)
+            notifications.extend(new_notifications)
         if len(statement_ids) == 0:
             raise UserError(_('You have already imported that file.'))
         return statement_ids, notifications
