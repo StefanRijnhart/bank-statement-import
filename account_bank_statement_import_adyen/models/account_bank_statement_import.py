@@ -12,9 +12,6 @@ from openerp.addons.account_bank_statement_import.parserlib import (
     BankStatement)
 
 
-TYPES = ['Settled', 'Fee', 'MerchantPayout', 'Refunded']
-
-
 class Import(models.TransientModel):
     _inherit = 'account.bank.statement.import'
 
@@ -107,11 +104,6 @@ class Import(models.TransientModel):
                     statement.date = date
 
                 row[8] = row[8].strip()
-                if row[8] not in TYPES:
-                    raise ValueError(
-                        _('Unknown transaction type in Adyen statement: %s.')
-                        % row[8])
-
                 if row[8] == 'MerchantPayout':
                     payout -= self.balance(row)
                     continue
