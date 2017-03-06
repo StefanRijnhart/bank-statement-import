@@ -12,10 +12,8 @@ class TestImportAdyen(TestStatementFile):
 
     def test_import_adyen(self):
         self._test_statement_import(
-            'account_bank_statement_import_adyen', 'adyen_test.xlsx', '48')
+            'account_bank_statement_import_adyen', 'adyen_test.xlsx',
+            'YOURCOMPANY_ACCOUNT 2016/48')
         statement = self.env['account.bank.statement'].search(
             [], order='create_date desc', limit=1)
-        self.assertEqual(len(statement.line_ids), 22)
-        self.assertTrue(
-            self.env.user.company_id.currency_id.is_zero(
-                sum(line.amount for line in statement.line_ids)))
+        self.assertEqual(len(statement.line_ids), 21)

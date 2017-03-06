@@ -12,6 +12,9 @@ from openerp.addons.account_bank_statement_import.parserlib import (
     BankStatement)
 
 
+TYPES = ['Settled', 'Fee', 'MerchantPayout', 'Refunded']
+
+
 class Import(models.TransientModel):
     _inherit = 'account.bank.statement.import'
 
@@ -47,16 +50,22 @@ class Import(models.TransientModel):
         return super(Import, self)._import_statement(stmt_vals)
 
     @api.model
+    def balance(self, row):
+        return -row[15] if row[15] else sum(
+            row[i] if row[i] else 0.0
+            for i in (16, 17, 18, 19, 20))
+
+    @api.model
     def import_adyen_transaction(self, statement, row):
         transaction = statement.create_transaction()
         transaction.value_date = row[6].strftime(DATEFMT)
-        transaction.transferred_amount = (
-            -row[15] if row[15] else sum(
-                row[i] if row[i] else 0.0
-                for i in (16, 17, 18, 19, 20)))
+        transaction.transferred_amount = self.balance(row)
         transaction.note = (
             '%s %s %s %s' % (row[2], row[3], row[4], row[21]))
-        transaction.message = row[4] or row[3] or row[9]
+        if row[4] and row[3]:
+            transaction.message = '%s %s' % (row[4], row[3])
+        else:
+            transaction.message = row[4] or row[3] or row[9]
         return transaction
 
     @api.model
@@ -65,6 +74,8 @@ class Import(models.TransientModel):
         statement = None
         headers = False
         fees = 0.0
+        balance = 0.0
+        payout = 0.0
 
         with BytesIO() as buf:
             buf.write(data_file)
@@ -94,6 +105,17 @@ class Import(models.TransientModel):
                 date = row[6].strftime(DATEFMT)
                 if not statement.date or statement.date > date:
                     statement.date = date
+
+                row[8] = row[8].strip()
+                if row[8] not in TYPES:
+                    raise ValueError(
+                        _('Unknown transaction type in Adyen statement: %s.')
+                        % row[8])
+
+                if row[8] == 'MerchantPayout':
+                    payout -= self.balance(row)
+                    continue
+                balance += self.balance(row)
                 self.import_adyen_transaction(statement, row)
                 fees += sum(
                     row[i] if row[i] else 0.0
@@ -108,6 +130,14 @@ class Import(models.TransientModel):
             transaction.value_date = max(
                 t.value_date for t in statement['transactions'])
             transaction.transferred_amount = -fees
-            transaction.message = 'Commision, markup etc.'
+            balance -= fees
+            transaction.message = 'Commision, markup etc. batch %s' % (
+                statement.statement_id)
+
+        if self.env.user.company_id.currency_id.compare_amounts(
+                balance, payout) != 0:
+            raise ValueError(
+                _('Parse error. Balance %s not equal to merchant '
+                  'payout %s') % (balance, payout))
 
         return statements
