@@ -59,10 +59,8 @@ class Import(models.TransientModel):
         transaction.transferred_amount = self.balance(row)
         transaction.note = (
             '%s %s %s %s' % (row[2], row[3], row[4], row[21]))
-        if row[4] and row[3]:
-            transaction.message = '%s %s' % (row[4], row[3])
-        else:
-            transaction.message = row[4] or row[3] or row[9]
+        transaction.message = "%s %s" % (
+            row[3] or row[4] or row[9], int(row[23]))
         return transaction
 
     @api.model
@@ -124,7 +122,7 @@ class Import(models.TransientModel):
             transaction.transferred_amount = -fees
             balance -= fees
             transaction.message = 'Commision, markup etc. batch %s' % (
-                statement.statement_id)
+                int(row[23]))
 
         if self.env.user.company_id.currency_id.compare_amounts(
                 balance, payout) != 0:
