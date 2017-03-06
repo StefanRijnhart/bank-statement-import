@@ -124,6 +124,9 @@ class Import(models.TransientModel):
             transaction.message = 'Commision, markup etc. batch %s' % (
                 int(row[23]))
 
+        if statement['transactions'] and not payout:
+            raise ValueError(
+                _('No payout detected in Adyen statement.'))
         if self.env.user.company_id.currency_id.compare_amounts(
                 balance, payout) != 0:
             raise ValueError(
