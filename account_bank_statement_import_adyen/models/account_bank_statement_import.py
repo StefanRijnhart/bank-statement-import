@@ -48,7 +48,7 @@ class Import(models.TransientModel):
 
     @api.model
     def balance(self, row):
-        return -row[15] if row[15] else sum(
+        return -(row[15] or 0) + sum(
             row[i] if row[i] else 0.0
             for i in (16, 17, 18, 19, 20))
 
@@ -125,11 +125,11 @@ class Import(models.TransientModel):
                 int(row[23]))
 
         if statement['transactions'] and not payout:
-            raise ValueError(
+            raise UserError(
                 _('No payout detected in Adyen statement.'))
         if self.env.user.company_id.currency_id.compare_amounts(
                 balance, payout) != 0:
-            raise ValueError(
+            raise UserError(
                 _('Parse error. Balance %s not equal to merchant '
                   'payout %s') % (balance, payout))
 
