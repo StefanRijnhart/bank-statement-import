@@ -59,8 +59,7 @@ class Import(models.TransientModel):
         transaction.transferred_amount = self.balance(row)
         transaction.note = (
             '%s %s %s %s' % (row[2], row[3], row[4], row[21]))
-        transaction.message = "%s %s" % (
-            row[3] or row[4] or row[9], int(row[23]))
+        transaction.message = "%s" % (row[3] or row[4] or row[9])
         return transaction
 
     @api.model
