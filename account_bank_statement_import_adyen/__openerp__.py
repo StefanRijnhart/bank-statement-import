@@ -9,6 +9,7 @@
     'website': 'https://github.com/oca/bank-statement-import',
     'depends': [
         'account_bank_statement_import',
+        'account_bank_statement_clearing_account',
     ],
     'data': [
         'views/account_journal.xml',

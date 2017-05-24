@@ -8,7 +8,11 @@ class TestImportAdyen(TestStatementFile):
         super(TestImportAdyen, self).setUp()
         self.journal = self.env['account.journal'].search(
             [('type', '=', 'bank')], limit=1)
-        self.journal.write({'adyen_merchant_account': 'YOURCOMPANY_ACCOUNT'})
+        self.journal.default_debit_account_id.reconcile = True
+        self.journal.write({
+            'adyen_merchant_account': 'YOURCOMPANY_ACCOUNT',
+            'update_posted': True,
+        })
 
     def test_import_adyen(self):
         self._test_statement_import(
@@ -20,6 +24,24 @@ class TestImportAdyen(TestStatementFile):
         self.assertTrue(
             self.env.user.company_id.currency_id.is_zero(
                 sum(line.amount for line in statement.line_ids)))
+
+        account = self.env['account.account'].search([(
+            'type', '=', 'receivable')], limit=1)
+        for line in statement.line_ids:
+            line.process_reconciliation([{
+                'debit': -line.amount if line.amount < 0 else 0,
+                'credit': line.amount if line.amount > 0 else 0,
+                'account_id': account.id}])
+
+        statement.button_confirm_bank()
+        self.assertEqual(statement.state, 'confirm')
+        lines = self.env['account.move.line'].search([
+            ('account_id', '=', self.journal.default_debit_account_id.id),
+            ('statement_id', '=', statement.id)])
+        reconcile = lines.mapped('reconcile_id')
+        self.assertEqual(len(reconcile), 1)
+        self.assertFalse(lines.mapped('reconcile_partial_id'))
+        self.assertEqual(lines, reconcile.line_id)
 
     def test_import_adyen_credit_fees(self):
         self._test_statement_import(
