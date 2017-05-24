@@ -8,7 +8,7 @@
     'category': 'Banking addons',
     'website': 'https://opener.am',
     'depends': [
-        'account',
+        'account_cancel',
     ],
     'installable': True,
 }

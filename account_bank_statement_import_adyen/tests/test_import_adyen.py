@@ -43,6 +43,11 @@ class TestImportAdyen(TestStatementFile):
         self.assertFalse(lines.mapped('reconcile_partial_id'))
         self.assertEqual(lines, reconcile.line_id)
 
+        statement.button_draft()
+        self.assertEqual(statement.state, 'draft')
+        self.assertFalse(lines.mapped('reconcile_partial_id'))
+        self.assertFalse(lines.mapped('reconcile_id'))
+
     def test_import_adyen_credit_fees(self):
         self._test_statement_import(
             'account_bank_statement_import_adyen',

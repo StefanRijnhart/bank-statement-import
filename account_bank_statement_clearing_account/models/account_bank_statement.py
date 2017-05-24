@@ -52,8 +52,22 @@ class BankStatement(models.Model):
         lines.reconcile_partial()
 
     @api.multi
-    def button_cancel(self):
-        res = super(BankStatement, self).button_cancel()
+    def unreconcile_clearing_account(self):
+        self.ensure_one()
+        lines = self.get_reconcile_clearing_account_lines()
+        if not lines:
+            return False
+        reconciliation = lines[0].reconcile_id
+        if reconciliation and all(
+                line.reconcile_id == reconciliation
+                for line in lines) and all(
+                    line in lines
+                    for line in reconciliation.line_id):
+            reconciliation.unlink()
+
+    @api.multi
+    def button_draft(self):
+        res = super(BankStatement, self).button_draft()
         for statement in self:
             statement.unreconcile_clearing_account()
         return res
