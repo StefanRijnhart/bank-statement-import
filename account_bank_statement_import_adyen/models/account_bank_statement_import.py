@@ -3,6 +3,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 from io import BytesIO
 from openpyxl import load_workbook
+from zipfile import BadZipfile
 
 from openerp import models, api
 from openerp.exceptions import Warning as UserError
@@ -73,7 +74,10 @@ class Import(models.TransientModel):
 
         with BytesIO() as buf:
             buf.write(data_file)
-            sheet = load_workbook(buf)._sheets[0]
+            try:
+                sheet = load_workbook(buf)._sheets[0]
+            except BadZipfile as e:
+                raise ValueError(e)
             for row in sheet.rows:
                 row = [cell.value for cell in row]
                 if len(row) != 31:
