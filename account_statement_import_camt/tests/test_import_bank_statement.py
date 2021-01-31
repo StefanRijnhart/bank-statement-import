@@ -8,6 +8,8 @@ import pprint
 import tempfile
 from datetime import date
 
+import mock
+
 from odoo.modules.module import get_module_resource
 from odoo.tests.common import TransactionCase
 
@@ -111,13 +113,18 @@ class TestImport(TransactionCase):
             }
         )
 
-    def test_statement_import(self):
+    @mock.patch(
+        "odoo.addons.account.models.sequence_mixin."
+        "SequenceMixin._constrains_date_sequence",
+    )
+    def test_statement_import(self, constraint):
         """Test correct creation of single statement."""
         testfile = get_module_resource(
             "account_statement_import_camt", "test_files", "test-camt053"
         )
         with open(testfile, "rb") as datafile:
             camt_file = base64.b64encode(datafile.read())
+
             self.env["account.statement.import"].create(
                 {
                     "statement_filename": "test import",
@@ -142,7 +149,11 @@ class TestImport(TransactionCase):
                 )
             )
 
-    def test_zip_import(self):
+    @mock.patch(
+        "odoo.addons.account.models.sequence_mixin."
+        "SequenceMixin._constrains_date_sequence",
+    )
+    def test_zip_import(self, constraint):
         """Test import of multiple statements from zip file."""
         testfile = get_module_resource(
             "account_statement_import_camt", "test_files", "test-camt053.zip"
@@ -156,4 +167,5 @@ class TestImport(TransactionCase):
                 [("name", "in", ["1234Test/2", "1234Test/3"])]
             )
 
-            self.assertTrue(all([st.line_ids for st in bank_st_record]))
+        self.assertTrue(all([st.line_ids for st in bank_st_record]))
+        self.assertEqual(bank_st_record[0].line_ids.mapped("sequence"), [1, 2, 3])

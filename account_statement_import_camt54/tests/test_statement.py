@@ -42,7 +42,6 @@ class TestGenerateBankStatement(SavepointCase):
     @mock.patch(
         "odoo.addons.account.models.sequence_mixin."
         "SequenceMixin._constrains_date_sequence",
-        side_effect=False,
     )
     def _load_statement(self, constraint):
         testfile = get_module_resource(
